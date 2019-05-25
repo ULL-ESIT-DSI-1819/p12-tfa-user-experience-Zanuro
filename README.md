@@ -559,14 +559,312 @@ Tambien se especifican que las peticiones a '/es',y entrariamos directamente a E
 Las APIs de ES comienzan en la raiz y por lo tanto necesitariamos quitar el '/es' del comienzo de la linea.Podriamos utilizar la misma tecnica para hacer peticiones proxy a otros servicios tambien pero debemos tener cuidado con que hacemos proxy.Los servicios proxys pueden llegar a ser vulnerables cuando dan aceso a otros servicios o niveles de privilegios de esos servicios que no deberian ser accesibles por el usuario final.
 
 Necesitamos correr tanto el servidor de webpack-dev-server como el servidor de la practica 7 junto con elasticsearch.
+(captura)
 
+### Implementing a View
 
+Para implementar una vista que muestra los bundles de un usuario, necesitamos sacar los bundles de forma asincrona del servidor y luego anadir una funcion que renderiza la lista utilizando la template de Handlebars para producir un html y luego necesitamos anadir la ruta hash a la funcion showView.
 
+En index.ts insertamos la funcion asincrona de getBundles:
+```typescript
 
+const getBundles = async() => {
+    const esRes = await fetch('/es/b4/bundle/_search?size=1000');
 
+    const esResBody = await esRes.json();
 
+    return esResBody.hits.hits.map(hit => ({
+        id: hit._id,
+        name: hit._source.name,
+    }));
+};
+```
 
+este metodo hace una peticion asincrona a Elasticsearch con el metodo de fetch devolviendo una promesa realizando una peticion http con unos parametros concretos,en este caso le decimos que esperamos sacar 1000 bundles de ElasticSearch del bundle con indice b4.
 
+La API fetch es relativamente nueva frente a XMLHttpRequest.
+fetch es bastante similar a request-promise,una diferencia notable es la manera en la cual el contenido del body de respuesta es manejado.Para decodificar el contenido del body como JSON con el fetch de la API necesitamos llamar al metodo de respuesta json,que a su vez es otra funcion asincrona que devuelve una promesa. En las dos llamadas hacemos uso del await para esperar hasta que las promesas se resuelvan/rechazan.
 
+Una vez que el cuerpo del json ha sido decodificado, extraemos los resultados de ElasticSearch como un array de objetos,cada uno conteniendo el id del documento y el nombre del bundle.
+En caso de que se produzca un fallo la promesa queda rechazada.
 
- 
+Tambien dentro de index.ts anadimos la funcion de listBundles para renderizar la lista de bundles utilizando la template de HandleBars.
+```typescript
+const listBundles = bundles => {
+    mainElement.innerHTML = templates.listBundles({bundles});
+};
+```
+
+de momento esta funcion solo renderiza los bundles utilizando una template de handlebars tambien llamada listBundles.
+
+Necesitamos modificar la funcion de showView() para anadir un manejador para la ruta #list-bundles
+```typescript
+case '#list-bundles':
+    const bundles = await getBundles();
+    listBundles(bundles);
+    break;
+```
+
+Luego anadimos la implementacion de la template de listBundles:
+```typescript
+export const listBundles = Handlebars.compile(`
+  <div class="panel panel-default">
+    <div class="panel-heading">Your Bundles</div>
+    {{#if bundles.length}}
+      <table class="table">
+        <tr>
+          <th>Bundle Name</th>
+          <th>Actions</th>
+        </tr>
+        {{#each bundles}}
+        <tr>
+          <td>
+            <a href="#view-bundle/{{id}}">{{name}}</a>
+          </td>
+          <td>
+            <button class="btn delete" data-bundle-id="{{id}}">Delete</button>
+          </td>
+        </tr>
+        {{/each}}
+      </table>
+    {{else}}
+      <div class="panel-body">
+        <p>None yet!</p>
+      </div>
+    {{/if}}
+  </div>
+`);
+```
+
+Este template utiliza el array de bundle pasado para renderizar un panel de bootstrap con una tabla de 2 columnas.La columna izquierda 
+contiene el nombre del bundle y en la otra columna hay un boton de borrar que te permite borrar el bundle(sin embargo no esta puesto en funcionamiento)
+Utiliza varias funcionalidades de handlebars como el {{#if else}}
+, que en funcion de si hay bundle {{#if bundles.length}} se renderiza la tabla y si no se anade un mensaje de "None yet!".
+El {{#each}} itera sobre los bundles y crea una nueva fila para cada uno y agrega dos celdas una conteniendo el nombre y la otra el boton.
+Utilizamos el {{name}} y el {{id}} para referirnos al nombre y el id del bundle al que se hace referencia en el momento actual.
+
+El nombre de la columna tambien hace referencia a #view-bundle/{{id}} permitiendonos llevar a una vista viendo el bundle en cuestion.
+El boton de borrar tambien viene referenciado por el id del bundle para saber que bundle estamos borrando.
+
+(captura)
+
+y tras anadir algunos bundles con:
+```javascript
+curl -s -X POST localhost:60702/api/bundle?name=X | jq '.'
+```
+(captura)
+
+Vamos a proceder a anadir un nuevo bundle.
+
+## Saving Data with a form
+
+Procedemos a anadir una funcionalidad para permitir anadir bundles directamente desde la aplicacion web.Esto lo hacemos utilizando la etiqueta form de html,con esto podemos coger input del usuario y procesarlo haciendo una llamada proxy a la API.
+Anadimos lo siguient al template:
+```typescript
+export const addBundleForm = Handlebars.compile(`
+    <div class="panel panel-default">
+      <div class="panel-heading">Create a new bundle.</div>
+      <div class="panel-body">
+        <form>
+          <div class="input-group">
+            <input class="form-control" placeholder="Bundle Name" />
+            <span class="input-group-btn">
+              <button class="btn btn-primary" type="submit">Create</button>
+            </span>
+         </div>
+        </form>
+    </div>
+    </div>
+`);
+```
+
+ Tal como la template de listBundles(),esta template crea un panel para almacenar los contenidos,creamos un form con un input donde el usuario pueda introducir el nombre del bundle y un boton de submit.
+
+ Luego actualizamos el index.ts:
+ ```typescript
+
+ const listBundles = bundles => {
+     mainElement.innerHTML =
+        templates.addBundleForm() + templates.listBundles({bundles});
+
+    const form = mainElement.querySelector('form');
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        const name = form.querySelector('input').value;
+        addBundle(name);
+    });
+ };
+ ```
+Anadimos al elemento html tanto el form de anadir bundle y tambien la de mostrar los bundles.Cogemos una referencia del elemento form, y anadimos un manejador de eventos que en caso de que se haga un submit se cree un nuevo bundle con ese nombre.Se utiliza preventDefault para que no se tenga que navegar a otra pagina/tomar otra accion.Con el nombre del bundle llamamos al addBundle().
+
+Creamos la funcion addBundle() que coge el nombre del bundle y asincroneamente lo anade y luego actualiza la lista.En caso de exito o fallo tenemos que informar al usuario y por eso creamos una funcion para ello.
+```typescript
+const showAlert = (message, type= 'danger') => {
+    const html = templates.alert({type,message});
+    alertsElement.insertAdjacentHTML('beforeend',html);
+};
+```
+Esta funcion coge el mensaje y el tipo de alerta y genera un cuadro de alerta con ello y luego lo anade al final del elemento alertsElement.
+
+Por ultimo anadimos la funcion de addBunble():
+```typescript
+
+const addBundle = async (name) => {
+    try{
+        //list of created bundles
+        const bundles = await getBundles();
+
+        // add the new bundle
+        const url = `/api/bundle?name=${encodeURIComponent(name)}`;
+        const res = await fetch(url, {method: 'POST'});
+        const resBody = await res.json();
+
+        //add new bundle to the original list
+        bundles.push({id: resBody._id, name});
+        listBundles(bundles);
+
+        showAlert(`Bundle "${name}" has been created!`, 'success');
+    }
+    catch(err){
+        showAlert(err);
+    }
+};
+```
+Definimos primero un bloque try-catch para manejar las excepciones y las promesas rechazadas.Luego con un await esperamos que se nos devuelva una lista de bundles.Tenemos que coger la lista actualizada ya que el usuario puede que lo haya modificado desde otra pestana.
+
+Luego a partir del la url con el nombre del bundle a anadir hacemos una peticion post para crear el bundle.Una vez que se haya anadido cogemos el objeto json de respuesta que nos devuelve entre otros el id del bundle.Luego anadimos el bundle al array de los otros bundles con su id y su nombre y luego llamamos a listBundles para obtener la nueva lista de bundles.Llamamos a showAlert() para que nos diga que la operacion ha tenido exito en otro caso se llamaria a showAlert() con el error que haya surgido.
+
+Una mala interpretacion de esto seria anadir el bundle y luego pedir la lista ya que surgia algo llamado "eventual consistency", que significa que hay un cierto delay entre los cambios con exito realizados sobre los datos y los resultados de las consultas.
+Esto seria una mala implementacion:
+```typescript
+const addBundle = async (name) => {
+    try{
+
+        // add the new bundle
+        const url = `/api/bundle?name=${encodeURIComponent(name)}`;
+        const res = await fetch(url, {method: 'POST'});
+        const resBody = await res.json();
+
+        // Grab the list of all bundles,excepting the new one to be in the list
+        //Due to eventual consistency,the new bundle may be missing
+        const bundles = await getBundles();
+        listBundles(bundles);
+
+        showAlert(`Bundle "${name}" has been created!`, 'success');
+    }
+    catch(err){
+        showAlert(err);
+    }
+};
+```
+Aqui lo primero que hacemos es una peticion post para anadir el bundle y luego sacamos la lista de bundles con getBundles(),incluido el ultimo bundle anadido.El problema no es el orden en los que se hacen ademas que como las funciones son llamadas con await tendran que esperar hasta que se resulven.Sin embargo el problema es que hay poco tiempo entre la finalizacion de la peticion post y la peticion para obtener los bundles,y por lo tanto es posible que no se haya actualizado con el bundle nuevo al hacer la llamada para obtener los bundles.
+Pero este problema no es solo de ElasticSearch sino que tambien ocurre en SQL y una manera de hacerlo es con un servidor central que recibe las peticiones de escritura y luego las replica a otros servidores de solo lectura para las consultas.
+Esta es una buena manera para manejarse contra resultados no esperados por culpa de "eventual consistency".
+
+Si visitamos otra vez #list-bundles:
+(captura)
+(captura)
+
+## Wrapping up
+
+En este capitulo hemos aprendido como hacer un proyecto front-end con Node.js utilizando webpack utilizando tambien Bootstrap.
+Hemos configurado TypeScript para transpilar y comprobacion del tipo para el codigo.
+Para manejar el codigo sincrono/asincrono hemos utilizado funciones asincronas con metodos que devolvian promesas.
+Hemos utilizado una libreria de templating como Handlebars para generar html.
+
+## Extracting Text
+
+En el proyecto se coge todo el css de bootstrap y se pone en una etiqueta "<style>" del index.html,pero esto no es la manera correcta de hacerlo sino es hacer un fichero a parte que contenga todo esto.
+
+Vamos a incorporar el extract-text-webpack-plugin al proyecto.
+
+Instalamos y luego modificamos el webpack.config.js:
+```javascript
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+    {
+        test: /\.css$/,
+        use: ExtractTextPlugin.extract({
+          fallback: "style-loader",
+          use: "css-loader"
+        })
+      }
+new ExtractTextPlugin("styles.css"),
+```
+,con esto importamos el modulo y modificamos la regla para que el css se cargue de esta menra, luego creando una nueva instancia que creara el fichero .css con los estilos.
+
+## Deleting Bundles
+
+Otra funcionalidad de la aplicacion deberia ser la de borrar bundles a traves de los botones de Delete.
+
+Primero anadimos esto a la funcion listBundles():
+```typescript
+const deleteButtons = mainElement.querySelectorAll('button.delete');
+for (let i=0; i < deleteButtons.length;i++){
+    const deleteButton = deleteButtons[i];
+    deleteButton.addEventListener('click', event => {
+        deleteBundle(deleteButton.getAttribute('data-bundle-id'));
+    });
+}
+```
+Esto selecciona el boton de la tabla y pone un manejador de eventos que en caso de click se extrae el id del bundle del atributo data-bundle id y se borra el bundle mediante la funcion deleteBundle().
+
+La funcion asincrona de esto seria:
+```typescript
+/**
+ * Delete the bundle with the specified ID, then list bundles.
+ */
+const deleteBundle = async (bundleId) => {
+    try {
+        // Delete the bundle, then render the updated list with listBundles().
+
+        showAlert('Bundle deleted!', 'success');
+    }
+    catch(err){
+        showAlert(err);
+    }
+};
+```
+
+dentro de este bloque debemos hacer lo siguiente:
+-getBundles() para obtener la lista de bundles
+-encontrar el indice dentro de la lista de bundleId de la lista.
+-hacer una peticion delete utilizando fetch() con el bundleId.
+-borrar el bundle de la lista con splice,y el indice.
+-renderizar la lista con listBundle() y mensaje de exito con showAlert().
+
+Si ocurre algun error deberia cogerlo por el catch y llamar a showAlert() con la alerta.
+```typescript
+const deleteBundle = async (bundleId) => {
+    try {
+    const bundles = await getBundles();
+
+    const idx = bundles.findIndex(bundle => bundle.id === bundleId);
+    if (idx === -1) {
+      throw Error(`No hay bundle con el id: "${bundleId}"`);
+    }
+
+    const url = `/api/bundle/${encodeURIComponent(bundleId)}`;
+    await fetch(url, {method: 'DELETE'});
+
+    bundles.splice(idx, 1);
+
+    listBundles(bundles);
+
+    showAlert(`Bundle deleted!`, 'success');
+  } catch (err) {
+    showAlert(err);
+  }
+};
+```
+
+Como se ha mencionado anteriormente primero se sacan los bundles siendo otra vez una funcion await esperando a que la promesa se resuelva, y luego buscamos dentro del array de bundles que hemos obtenido el id que queremos borrar.En caso de que no existe mandamos un error.
+Hacemos una peticion a la url que acaba con el id del bundle de tipo delete y luego sacamos ese bundle de la lista y actualizamos la lista.
+
+Comprobamos en el navegador
+
+Antes de borrar:
+(captura)
+
+Despues:
+(captura)
+
