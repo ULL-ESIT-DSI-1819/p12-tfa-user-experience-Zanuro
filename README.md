@@ -83,11 +83,13 @@ Al hacer:
 npm start
 ```
 ,nos sale lo siguiente:
-(captura)
+
+![p8-1](https://user-images.githubusercontent.com/25621400/58369402-d955ae80-7ef1-11e9-9b7c-532f1891396e.png)
 
 Por defecto, webpack-dev-server escucha en el puerto 8080.
 Al visitar en la web el : localhost:8081(en nuestro caso nos asigna por defecto el puerto 8081) no sale esto:
-(captura)
+
+![p8-2](https://user-images.githubusercontent.com/25621400/58369403-da86db80-7ef1-11e9-9494-88992742c80a.png)
 
 Actualmente, nuestro webpack.config.js contiene una sola entrada sin output.
 Lo siguiente que veremos es como utilizar un plugin generador de HTML para generar una aplicacion de Hello World.
@@ -152,7 +154,7 @@ Con esto insertamos una cabecera con el nombre B4 - Book Bundler y un parrafo co
 
 Corremos de nuevo el webpack dev server y accedemos al localhost:60800.
 
-(captura)
+![p8-3](https://user-images.githubusercontent.com/25621400/58369404-db1f7200-7ef1-11e9-8851-03b9590d160c.png)
 
 ## Sprucing Up Your UI with Bootstrap
 
@@ -243,7 +245,7 @@ Luego cogemos una referencia de las alertas e insertamos un ejemplo,todas las cl
 
 Corremos el servidor:
 
-(captura)
+![p8-4](https://user-images.githubusercontent.com/25621400/58369406-dbb80880-7ef1-11e9-91dd-bfb193b4297e.png)
 
 Al intentar cerrar el mensaje no podemos ya que no hemos incorporado funcionalidades para ello.
 
@@ -278,7 +280,8 @@ import 'bootstrap';
 ,esto le indica a webpack que entry.js se basa en el modulo de bootstrap.
 
 Corremos el servidor:
-(captura)
+
+![p8-5](https://user-images.githubusercontent.com/25621400/58369407-dce93580-7ef1-11e9-8763-93441cd9f5b7.png)
 
 y vemos como si nos dejo cerrar la alerta.
 
@@ -395,7 +398,8 @@ Sacamos la referencia del elemento mainElement y alertsElement, elementos que un
 Luego metemos dentro del contenido principal de la pagina el mensaje de welcome sacado de templates y hacemos lo mismo con la alerta metiendo el mensaje de alerta.
 
 Reinciamos el servidor y comprobamos que es la misma pagina que antes.
-(captura)
+
+![p8-6](https://user-images.githubusercontent.com/25621400/58369408-de1a6280-7ef1-11e9-9410-8eb6417ac6b8.png)
 
 Lo siguiente que haremos es HTML templating, permitiendonos generacion dinamica de HTML, en vez de seguir con strings estaticas.
 
@@ -473,10 +477,7 @@ alertsElement.innerHTML = templates.alert({
 ```
 Ahora llamamos para sacar la referencia al elemento templates.main y templates.welcome con templates.main() y templates.welcome() y dentro de la llamada de templates.alert() le pasamos los dos parametros que van a ser el tipo, en este caso info y el mensaje que va a generar en el cuadro de alerta.
 
-En el servidor observamos:
-(captura)
-
-y como vemos el cuadro es azul al ser de informacion y tiene el mensaje que le hemos pasado.
+En el servidor observamos como el cuadro de alerta es azul, al ser de informacion y tiene el mensaje que le hemos pasado.
 
 Luego crearemos mas funcionalidades.
 
@@ -518,7 +519,7 @@ showView().catch(err => window.location.hash = '#welcome');
 
 Aqui llamamos a showView() directamente retornando una promesa.En caso de que el hash no sea reconocido se devuelve el de la pagina por defecto #welcome.
 
-(captura)
+![p8-7](https://user-images.githubusercontent.com/25621400/58369416-e377ad00-7ef1-11e9-9143-1c67d2554efa.png)
 
 vemos como nos devuelve la pagina inicial sin la alerta con la ruta de la pagina de inicio(#welcome).
 
@@ -559,7 +560,8 @@ Tambien se especifican que las peticiones a '/es',y entrariamos directamente a E
 Las APIs de ES comienzan en la raiz y por lo tanto necesitariamos quitar el '/es' del comienzo de la linea.Podriamos utilizar la misma tecnica para hacer peticiones proxy a otros servicios tambien pero debemos tener cuidado con que hacemos proxy.Los servicios proxys pueden llegar a ser vulnerables cuando dan aceso a otros servicios o niveles de privilegios de esos servicios que no deberian ser accesibles por el usuario final.
 
 Necesitamos correr tanto el servidor de webpack-dev-server como el servidor de la practica 7 junto con elasticsearch.
-(captura)
+
+![p8-8](https://user-images.githubusercontent.com/25621400/58369415-e377ad00-7ef1-11e9-931b-70401ec5daf8.png)
 
 ### Implementing a View
 
@@ -646,13 +648,13 @@ Utilizamos el {{name}} y el {{id}} para referirnos al nombre y el id del bundle 
 El nombre de la columna tambien hace referencia a #view-bundle/{{id}} permitiendonos llevar a una vista viendo el bundle en cuestion.
 El boton de borrar tambien viene referenciado por el id del bundle para saber que bundle estamos borrando.
 
-(captura)
+![p8-9](https://user-images.githubusercontent.com/25621400/58369414-e377ad00-7ef1-11e9-8f15-7954243115b8.png)
 
 y tras anadir algunos bundles con:
 ```javascript
 curl -s -X POST localhost:60702/api/bundle?name=X | jq '.'
 ```
-(captura)
+![p8-10](https://user-images.githubusercontent.com/25621400/58369413-e2df1680-7ef1-11e9-96cc-1017044c0df0.png)
 
 Vamos a proceder a anadir un nuevo bundle.
 
@@ -762,8 +764,10 @@ Pero este problema no es solo de ElasticSearch sino que tambien ocurre en SQL y 
 Esta es una buena manera para manejarse contra resultados no esperados por culpa de "eventual consistency".
 
 Si visitamos otra vez #list-bundles:
-(captura)
-(captura)
+
+![p8-11](https://user-images.githubusercontent.com/25621400/58369412-e2df1680-7ef1-11e9-93d1-22346f53543b.png)
+
+![p8-12](https://user-images.githubusercontent.com/25621400/58369411-e2468000-7ef1-11e9-9bc5-209a971512b4.png)
 
 ## Wrapping up
 
@@ -863,8 +867,10 @@ Hacemos una peticion a la url que acaba con el id del bundle de tipo delete y lu
 Comprobamos en el navegador
 
 Antes de borrar:
-(captura)
+
+![p8-13](https://user-images.githubusercontent.com/25621400/58369410-e2468000-7ef1-11e9-94de-3eccc969be2a.png)
 
 Despues:
-(captura)
+
+![p8-14](https://user-images.githubusercontent.com/25621400/58369409-e2468000-7ef1-11e9-99f5-d511b18c4b5c.png)
 
