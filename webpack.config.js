@@ -14,7 +14,7 @@ module.exports = {
   },
   devServer: {
     contentBase: distDir,
-    port: 60800,
+    port: process.env.PORT,
     proxy: {
       '/api': 'http://localhost:60702',
       '/es': {
