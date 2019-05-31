@@ -5,12 +5,15 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "postinstall": "npm run build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ULL-ESIT-DSI-1819/p12-tfa-user-experience-Zanuro.git"
   },
+
   "author": "Vlad Comanescu",
   "license": "ISC",
   "bugs": {
@@ -34,5 +37,7 @@
     "webpack-dev-server": "2.9.1",
     "yargs": "^13.2.4"
   },
-  "dependencies": {}
+  "dependencies": {
+    "passport-twitter": "^1.0.4"
+  }
 }
