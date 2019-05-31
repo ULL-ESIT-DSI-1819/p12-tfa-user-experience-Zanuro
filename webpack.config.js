@@ -14,11 +14,11 @@ module.exports = {
   },
   devServer: {
     contentBase: distDir,
-    port: process.env.PORT,
+    port: (process.env.PORT || 60800),
     proxy: {
-      '/api': process.env.PORT,
+      '/api': 'http://localhost:60702',
       '/es': {
-        target: process.env.PORT,
+        target: 'http://localhost:9200',
         pathRewrite: {'^/es' : ''},
       }
     },
