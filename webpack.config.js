@@ -16,9 +16,9 @@ module.exports = {
     contentBase: distDir,
     port: (process.env.PORT || 60800),
     proxy: {
-      '/api': 'http://localhost:60702',
+      '/api': '0.0.0.0:60702',
       '/es': {
-        target: 'http://localhost:9200',
+        target: '0.0.0.0:9200',
         pathRewrite: {'^/es' : ''},
       }
     },
