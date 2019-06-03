@@ -1,0 +1,28 @@
+{
+  "serviceUrl": "http://93b52a32.ngrok.io",
+  "es": {
+    "host": "localhost",
+    "port": 9200,
+    "books_index": "books",
+    "bundles_index": "b4"
+  },
+  "auth": {
+    "facebook": {
+      "appID": "",
+      "appSecret": ""
+    },
+    "twitter":{
+      "consumerKey": "jLSSQZwa6ctx4ufODXbzxkpDY",
+      "consumerSecret": "wWKHDFfU1qaAlGIFTHBWqrUC5hOUPVc5wiyvaopdL79P4OElhY"
+    },
+    "google":{
+      "clientID": "681401068021-mui52lerncmcrscd0ptlujhdc7buib3m.apps.googleusercontent.com",
+      "clientSecret": "IsAh3urlfQL2DTzqvBkt0qkr"
+    },
+    "github":{
+      "clientID": "30c66bb1819b4b7ed2f0",
+      "clientSecret": "b34749d7b79d009a6bdd1690a1f427729a9bb9a6"
+    }
+  }
+  
+}
