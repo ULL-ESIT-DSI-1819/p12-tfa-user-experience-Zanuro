@@ -1,5 +1,5 @@
 {
-  "serviceUrl": "http://93b52a32.ngrok.io",
+  "serviceUrl": "http://65827b43.ngrok.io",
   "es": {
     "host": "localhost",
     "port": 9200,
@@ -16,8 +16,8 @@
       "consumerSecret": "wWKHDFfU1qaAlGIFTHBWqrUC5hOUPVc5wiyvaopdL79P4OElhY"
     },
     "google":{
-      "clientID": "681401068021-mui52lerncmcrscd0ptlujhdc7buib3m.apps.googleusercontent.com",
-      "clientSecret": "IsAh3urlfQL2DTzqvBkt0qkr"
+      "clientID": "681401068021-pv1eu33u07haph6aur52q3eo6vsqep9o.apps.googleusercontent.com",
+      "clientSecret": "h-0G0b4rOZAsVSq3u1oj18Sz"
     },
     "github":{
       "clientID": "30c66bb1819b4b7ed2f0",

@@ -8,7 +8,8 @@ module.exports = es => {
   const url = `http://${es.host}:${es.port}/${es.bundles_index}/bundle`;
 
   const router = express.Router();
- 
+
+
   router.use((req, res, next) => {
     if (!req.isAuthenticated()) {
       res.status(403).json({
@@ -48,7 +49,7 @@ module.exports = es => {
     }
   });
 
-  
+
   router.post('/bundle', async (req, res) => {
     try {
       const bundle = {
@@ -63,7 +64,6 @@ module.exports = es => {
       res.status(err.statusCode || 502).json(err.error || err);
     }
   });
-
 
   router.get('/bundle/:id', async (req, res) => {
     try {
@@ -87,11 +87,35 @@ module.exports = es => {
     }
   });
 
+
+  router.put('/bundle/:id/name/:name', async (req, res) => {
+    try {
+      const bundleUrl = `${url}/${req.params.id}`;
+
+      const {_source: bundle} = await rp({url: bundleUrl, json: true});
+
+      if (bundle.userKey !== getUserKey(req)) {
+        throw {
+          statusCode: 403,
+          error: 'You are not authorized to modify this bundle.',
+        };
+      }
+
+      bundle.name = req.params.name;
+
+      const esResBody =
+        await rp.put({url: bundleUrl, body: bundle, json: true});
+      res.status(200).json(esResBody);
+    } catch (err) {
+      res.status(err.statusCode || 502).json(err.error || err);
+    }
+  });
+
   router.delete('/bundle/:id', async (req, res) => {
     try {
       const bundleUrl = `${url}/${req.params.id}`;
 
-      const {_source: bundle, _version: version} =
+      const {_source: bundle, _if_seq_no: if_seq_no} =
         await rp({url: bundleUrl, json: true});
 
       if (bundle.userKey !== getUserKey(req)) {
@@ -103,7 +127,7 @@ module.exports = es => {
 
       const esResBody = await rp.delete({
         url: bundleUrl,
-        qs: { version },
+        qs: { if_seq_no },
         json: true,
       });
       res.status(200).json(esResBody);
@@ -114,3 +138,4 @@ module.exports = es => {
 
   return router;
 };
+

@@ -1,32 +1,20 @@
 import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import '../node_modules/bootstrap-social/bootstrap-social.css';
 import '../node_modules/font-awesome/css/font-awesome.min.css';
-
-
+import '../node_modules/bootstrap-social/bootstrap-social.css';
 
 import 'bootstrap';
 
 import * as templates from './templates.ts';
 
 
-const fetchJSON = async(url, method = 'GET') => {
-  try{
-      const response = await fetch(url, {method, credentials: 'same-origin'});
-      return response.json();
-  }
-  catch (error){
+const fetchJSON = async (url, method = 'GET') => {
+  try {
+    const response = await fetch(url, {method, credentials: 'same-origin'});
+    return response.json();
+  } catch (error) {
     return {error};
   }
 };
-
-const getBundles = async () => {
-  const bundles = await fetchJSON('/api/list-bundles');
-  if (bundles.error) {
-    throw bundles.error;
-  }
-  return bundles;
-};
-
 
 const listBundles = bundles => {
   const mainElement = document.body.querySelector('.b4-main');
@@ -50,10 +38,12 @@ const listBundles = bundles => {
   }
 };
 
-const showAlert = (message, type = 'danger') => {
-  const alertsElement = document.body.querySelector('.b4-alerts');
-  const html = templates.alert({type, message});
-  alertsElement.insertAdjacentHTML('beforeend', html);
+const getBundles = async () => {
+  const bundles = await fetchJSON('/api/list-bundles');
+  if (bundles.error) {
+    throw bundles.error;
+  }
+  return bundles;
 };
 
 const deleteBundle = async (bundleId) => {
@@ -63,7 +53,7 @@ const deleteBundle = async (bundleId) => {
 
     const idx = bundles.findIndex(bundle => bundle.id === bundleId);
     if (idx === -1) {
-      throw Error(`No bundle with the specified id: "${bundleId}" was found.`);
+      throw Error(`No bundle with id "${bundleId}" was found.`);
     }
 
     const url = `/api/bundle/${encodeURIComponent(bundleId)}`;
@@ -78,6 +68,14 @@ const deleteBundle = async (bundleId) => {
     showAlert(err);
   }
 };
+
+
+const showAlert = (message, type = 'danger') => {
+  const alertsElement = document.body.querySelector('.b4-alerts');
+  const html = templates.alert({type, message});
+  alertsElement.insertAdjacentHTML('beforeend', html);
+};
+
 
 const addBundle = async (name) => {
   try {
@@ -95,37 +93,38 @@ const addBundle = async (name) => {
   }
 };
 
+const getBundle = bundleId =>
+    fetchJSON(`/api/bundle/${encodeURIComponent(bundleId)}`);
 
-const showView = async () => {
-  const mainElement = document.body.querySelector('.b4-main');
-  const [view, ...params] = window.location.hash.split('/');
-
-  switch (view) {
-    case '#welcome':
+    const showView = async () => {
+      const mainElement = document.body.querySelector('.b4-main');
+      const [view, ...params] = window.location.hash.split('/');
+    
+      switch (view) {
+        case '#welcome':
+          const session = await fetchJSON('/api/session');
+          mainElement.innerHTML = templates.welcome({session});
+          if (session.err) {
+            showAlert(session.err);
+          }
+          break;
+        case '#list-bundles':
+          try {
+            const bundles = await getBundles();
+            listBundles(bundles);
+          } catch (err) {
+            showAlert(err);
+            window.location.hash = '#welcome';
+          }
+          break;
+        default:
+          throw Error(`Unrecognized view: ${view}`);
+      }
+    };
+    
+    (async () => {
       const session = await fetchJSON('/api/session');
-      mainElement.innerHTML = templates.welcome({session});
-      if(session.error){
-        showAlert(session.error);
-      }
-      break;
-    case '#list-bundles':
-      try {
-        const bundles = await getBundles();
-        listBundles(bundles);
-      }
-      catch (err){
-        showAlert(err);
-        window.location.hash = '#welcome';
-      }
-      break;
-    default:
-      throw Error(`Unrecognized view: ${view}`);
-  }
-};
-
-(async () => {
-  const session = await fetchJSON('/api/session');
-  document.body.innerHTML = templates.main({session});
-  window.addEventListener('hashchange', showView);
-  showView().catch(err => window.location.hash = '#welcome');
-})();
+      document.body.innerHTML = templates.main({session});
+      window.addEventListener('hashchange', showView);
+      showView().catch(err => window.location.hash = '#welcome');
+    })();
